@@ -1,0 +1,34 @@
+[
+    {
+        "origin": [
+            "https://kodemcards.xyz",
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:9099",
+            "http://localhost:8080",
+            "http://localhost:9199",
+            "http://localhost:4000",
+            "http://0.0.0.0:3000",
+            "https://firebase-emulators"
+        ],
+        "method": [
+            "GET",
+            "HEAD",
+            "PUT",
+            "POST",
+            "OPTIONS",
+            "DELETE"
+        ],
+        "responseHeader": [
+            "Content-Type",
+            "Content-Length",
+            "Accept",
+            "Origin",
+            "Authorization",
+            "Access-Control-Allow-Origin",
+            "Cache-Control",
+            "X-Requested-With"
+        ],
+        "maxAgeSeconds": 3600
+    }
+]

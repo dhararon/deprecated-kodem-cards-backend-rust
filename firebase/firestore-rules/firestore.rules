@@ -1,0 +1,111 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Funciones comunes reutilizables
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isUserAuthenticated(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function userExists() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    
+    function isAdmin() {
+      // Si estamos en emulador, considerar a cualquier usuario como admin
+      return isEmulatorMode() || 
+             (userExists() && getUserData().role == 'admin');
+    }
+    
+    function isEmulatorMode() {
+      // Permitir emulador basado en el entorno o documento específico
+      return (request.resource.data != null && 'emulator' in request.resource.data && request.resource.data.emulator == true) || 
+             (resource != null && 'emulator' in resource.data && resource.data.emulator == true) ||
+             (exists(/databases/$(database)/documents/system/config) && 
+              get(/databases/$(database)/documents/system/config).data.useEmulator == true);
+    }
+    
+    function isOwner(resourceField) {
+      return isAuthenticated() && request.auth.uid == resource.data[resourceField];
+    }
+    
+    function willBeOwner(resourceField) {
+      return isAuthenticated() && request.auth.uid == request.resource.data[resourceField];
+    }
+    
+    function isPublic() {
+      return resource.data.isPublic == true;
+    }
+    
+    function isAnonymous() {
+      return isAuthenticated() && request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
+    // Regla para permitir todas las operaciones cuando se usa el emulador
+    match /{document=**} {
+      // Permitir lectura y escritura completa en modo emulador sin requerir autenticación
+      allow read, write: if isEmulatorMode();
+    }
+
+    // Reglas de colección 'users'
+    match /users/{userId} {
+      // Permitir al usuario leer y escribir su propio documento
+      allow read, write: if isUserAuthenticated(userId);
+      
+      // Permitir a administradores leer cualquier documento de usuario
+      allow read: if isAdmin();
+    }
+
+    // Reglas para colección 'cards'
+    match /cards/{cardId} {
+      // Todos pueden leer cartas (acceso público)
+      allow read: if true;
+      
+      // Solo administradores pueden modificar cartas
+      allow create, update, delete: if isAdmin();
+    }
+    
+    // Reglas para colección 'decks'
+    match /decks/{deckId} {
+      // Permitir lectura a mazos públicos para cualquier usuario autenticado (incluido anónimo)
+      allow read: if isAuthenticated() && (isPublic() || isOwner("userUid"));
+      
+      // Permitir al usuario crear, actualizar y eliminar sus propios mazos
+      allow create: if willBeOwner("userUid") && !isAnonymous();
+      allow update, delete: if isOwner("userUid") && !isAnonymous();
+                            
+      // Permitir a administradores gestionar todos los mazos
+      allow write: if isAdmin();
+    }
+    
+    // Reglas para colección 'user_collections'
+    match /user_collections/{userId} {
+      // Permitir al usuario acceder y modificar su propia colección
+      allow read, write: if isUserAuthenticated(userId);
+      
+      // Permitir a administradores gestionar todas las colecciones
+      allow read, write: if isAdmin();
+    }
+    
+    // Reglas para colección 'wishlists'
+    match /wishlists/{wishlistId} {
+      // Permitir lectura a wishlists públicas para cualquier usuario autenticado
+      allow read: if isAuthenticated() && (isPublic() || isOwner("userId"));
+      
+      // Permitir al usuario crear, actualizar y eliminar sus propias wishlists
+      allow create: if willBeOwner("userId");
+      allow update, delete: if isOwner("userId");
+                            
+      // Permitir a administradores gestionar todas las wishlists
+      allow write: if isAdmin();
+    }
+  }
+} 

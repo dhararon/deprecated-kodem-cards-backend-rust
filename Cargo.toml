@@ -1,0 +1,67 @@
+[package]
+name = "kodem_cards_backend"
+version = "0.1.0"
+edition = "2021"
+authors = ["Your Name <your.email@example.com>"]
+description = "Backend for a Trading Card Game (TCG) with REST API and WebSocket support"
+
+[dependencies]
+# Web framework
+axum = { version = "0.7", features = ["macros"] }
+tokio = { version = "1.36", features = ["full"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["trace", "cors"] }
+async-trait = "0.1"
+
+# Database
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate"], default-features = false }
+postgres = { version = "0.19", default-features = false, features = ["with-uuid-1", "with-chrono-0_4"] }
+
+# Time Handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Authentication
+firebase-auth = "0.1"
+jsonwebtoken = "9.2"
+
+# Authentication & Security
+bcrypt = "0.15"
+uuid = { version = "1.7", features = ["v4", "serde"] }
+reqwest = { version = "0.11", features = ["json", "rustls-tls"], default-features = false }
+base64 = "0.13"
+ring = "0.17"
+
+# Caching
+redis = { version = "0.24", features = ["tokio-comp"] }
+
+# Logging & Monitoring
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Configuration
+config = "0.14"
+dotenv = "0.15"
+
+# Hot Reloading (Development)
+listenfd = "1.0"
+
+# Error Handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Testing
+mockall = "0.12"
+test-case = "3.3"
+
+# Documentation
+utoipa = { version = "4.2", features = ["axum_extras"] }
+utoipa-swagger-ui = { version = "6.0", features = ["axum"] }
+
+[dev-dependencies]
+tokio-test = "0.4"
+mockall = "0.12"
+test-case = "3.3"

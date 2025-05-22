@@ -1,0 +1,42 @@
+rules_version = '2';
+
+// Craft rules based on data in your Firestore database
+// allow write: if firestore.get(
+//    /databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin;
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Funciones reutilizables
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+             firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isEmulatorMode() {
+      // Verificar si hay un documento específico que indique que estamos en modo emulador
+      return firestore.exists(/databases/(default)/documents/system/config) &&
+             firestore.get(/databases/(default)/documents/system/config).data.useEmulator == true;
+    }
+    
+    // Regla para emulador - permite acceso total sin restricciones en modo prueba
+    match /{allPaths=**} {
+      allow read, write: if isEmulatorMode();
+    }
+    
+    // Reglas para carpeta de cartas
+    match /cards/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Reglas para carpetas de usuarios
+    match /users/{userId}/{fileName} {
+      // Los usuarios pueden leer y escribir en su propia carpeta
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+  }
+}
